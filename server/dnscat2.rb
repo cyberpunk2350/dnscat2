@@ -29,7 +29,7 @@ require 'securerandom'
 
 # version info
 NAME = "dnscat2"
-VERSION = "0.05"
+VERSION = "0.07"
 
 # Don't ignore unhandled errors in threads
 Thread.abort_on_exception = true
@@ -88,6 +88,9 @@ opts = Trollop::options do
 
   opt :firehose,       "If set, all output goes to stdout instead of being put in windows.",
     :type => :boolean, :default => false
+
+  opt :cache,       "If set, caching is enabled on the server.",
+    :type => :boolean, :default => true
 end
 
 SWindow.set_firehose(opts[:firehose])
@@ -205,7 +208,7 @@ dns_settings[:domains] += ARGV
 TunnelDrivers.start({
   :controller => controller,
   :driver     => DriverDNS,
-  :args       => [dns_settings[:host], dns_settings[:port], dns_settings[:domains]],
+  :args       => [dns_settings[:host], dns_settings[:port], dns_settings[:domains], opts[:cache]],
 })
 
 # Wait for the input window to finish its thing

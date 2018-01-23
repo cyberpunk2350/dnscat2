@@ -17,6 +17,8 @@
 #else
 #include <getopt.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <signal.h>
 #endif
 
 #include "controller/controller.h"
@@ -32,7 +34,7 @@
 
 /* Default options */
 #define NAME    "dnscat2"
-#define VERSION "v0.05"
+#define VERSION "v0.07"
 
 /* Default options */
 #define DEFAULT_DNS_HOST NULL
@@ -417,6 +419,15 @@ int main(int argc, char *argv[])
   /* This is required for win32 support. */
   winsock_initialize();
 
+#ifndef WIN32  
+  /* set the SIGCHLD handler to SIG_IGN causing zombie child processes to be reaped automatically */
+  if(signal(SIGCHLD, SIG_IGN) == SIG_ERR) 
+  {
+    perror("Couldn't set SIGCHLD handler to SIG_IGN");
+    exit(1);
+  }  
+#endif
+
   /* Set the default log level */
   log_set_min_console_level(min_log_level);
 
@@ -544,6 +555,14 @@ int main(int argc, char *argv[])
         usage(argv[0], "Unrecognized argument");
         break;
     }
+  }
+
+  if(getenv("DNSCAT_DOMAIN")!=NULL) {
+    if(getenv("DNSCAT_SECRET")!=NULL) {
+      session_set_preshared_secret(getenv("DNSCAT_SECRET"));
+    }
+    tunnel_driver = create_dns_driver_internal(group, getenv("DNSCAT_DOMAIN"), "0.0.0.0", 53, DEFAULT_TYPES, NULL);
+    tunnel_driver_created = TRUE;
   }
 
   create_drivers(drivers_to_create);
